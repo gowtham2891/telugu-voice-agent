@@ -10,7 +10,13 @@ from __future__ import annotations
 
 from .agent import SYSTEM_PROMPT, VoiceAgent
 from .config import ConfigError, Settings, get_settings
-from .health import CheckResult, check_settings
+from .health import (
+    CheckResult,
+    MissingCredential,
+    check_settings,
+    credentials_ready,
+    missing_credentials,
+)
 from .intents import classify, is_codemixed
 from .models import (
     AgentResponse,
@@ -39,6 +45,7 @@ __all__ = [
     "Conversation",
     "Intent",
     "Language",
+    "MissingCredential",
     "ProviderError",
     "Role",
     "SYSTEM_PROMPT",
@@ -46,9 +53,11 @@ __all__ = [
     "Transcription",
     "Turn",
     "VoiceAgent",
-    "classify",
     "check_settings",
+    "classify",
+    "credentials_ready",
     "get_settings",
     "is_codemixed",
+    "missing_credentials",
     "__version__",
 ]

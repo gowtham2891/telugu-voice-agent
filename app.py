@@ -11,7 +11,7 @@ import streamlit as st
 
 from voice_agent import VoiceAgent, __version__
 from voice_agent.config import ConfigError, Settings
-from voice_agent.health import check_settings
+from voice_agent.health import check_settings, missing_credentials
 from voice_agent.intents import classify, is_codemixed
 from voice_agent.models import Conversation, Role
 from voice_agent.providers.base import (
@@ -79,7 +79,8 @@ def api_key_panel(settings: Settings) -> None:
     deployed Streamlit app serves every visitor from one process -- a key put
     into the environment would leak into other people's sessions.
     """
-    with st.expander("🔑 Use your own API keys", expanded=False):
+    needs_key = bool(missing_credentials(settings))
+    with st.expander("🔑 Use your own API keys", expanded=needs_key):
         st.caption(
             "Keys stay in this browser session only. They are never written to "
             "disk, never logged, and never shared with other visitors. "
@@ -106,6 +107,33 @@ def api_key_panel(settings: Settings) -> None:
                 st.success(f"**{result.provider}** — {result.message}")
             else:
                 st.error(f"**{result.provider}** — {result.message}")
+
+
+def credential_gate(settings) -> bool:
+    """Show what is missing and whether the app may run.
+
+    Returns True when the selected providers are ready. When something is
+    missing the user is told which key, which provider needs it, and where to
+    get it -- instead of a stack trace half way through a run.
+    """
+    missing = missing_credentials(settings)
+    if not missing:
+        return True
+
+    lines = []
+    for item in missing:
+        line = "- **{0}** \u2014 needed for {1}".format(item.label, item.needed_for)
+        if item.get_it_at:
+            line += "  \u00b7  get one at `{0}`".format(item.get_it_at)
+        lines.append(line)
+
+    st.warning(
+        "**Add an API key to continue.**\n\n"
+        + "\n".join(lines)
+        + "\n\nOpen **Use your own API keys** in the sidebar and paste it there, "
+        "or switch the provider back to `mock` to use the offline demo."
+    )
+    return False
 
 
 def build_settings():
@@ -151,6 +179,12 @@ def build_settings():
         st.divider()
         if settings.is_mock:
             st.success("Mock mode â no credentials required.")
+        elif missing_credentials(settings):
+            st.error(
+                "Missing: "
+                + ", ".join(i.env_var for i in missing_credentials(settings))
+                + ". Add it above, or switch the provider back to `mock`."
+            )
         else:
             st.info("Live mode â using the keys provided.")
 
@@ -224,6 +258,9 @@ def main() -> None:
 
         typed = st.chat_input("Type in Telugu, English or Tenglish…")
         message = pending or typed
+
+        if message and not credential_gate(settings):
+            message = None
 
         if message:
             with st.chat_message("user"):

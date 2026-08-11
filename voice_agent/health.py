@@ -244,3 +244,53 @@ def check_settings(settings, only: Optional[str] = None) -> List[CheckResult]:
             )
 
     return results
+
+# --- what is missing, before anything is attempted -----------------------
+
+
+@dataclass
+class MissingCredential:
+    """A credential the current provider selection needs but does not have."""
+
+    label: str
+    env_var: str
+    needed_for: str
+    get_it_at: str = ""
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.env_var}) — needed for {self.needed_for}"
+
+
+def missing_credentials(settings) -> List[MissingCredential]:
+    """Credentials required by the selected providers that are not set.
+
+    Pure inspection: no network, no exceptions. Safe to call on every UI
+    rerun, which is what lets the app ask for a key up front instead of
+    failing deep inside the pipeline.
+    """
+    missing: List[MissingCredential] = []
+    # STT and TTS share one Sarvam key, so report it once.
+    if "sarvam" in {settings.stt, settings.tts} and not settings.sarvam_api_key.strip():
+        stages = [name for name, value in (("speech-to-text", settings.stt),
+                                           ("text-to-speech", settings.tts))
+                  if value == "sarvam"]
+        missing.append(MissingCredential(
+            "Sarvam AI key", "SARVAM_API_KEY",
+            " and ".join(stages), "sarvam.ai"))
+
+    if settings.llm == "openai" and not settings.openai_api_key.strip():
+        missing.append(MissingCredential(
+            "OpenAI API key", "OPENAI_API_KEY",
+            "the 'openai' language model", "platform.openai.com/api-keys"))
+
+    if settings.llm == "gemini" and not settings.gemini_api_key.strip():
+        missing.append(MissingCredential(
+            "Gemini API key", "GEMINI_API_KEY",
+            "the 'gemini' language model", "aistudio.google.com/apikey"))
+
+    return missing
+
+
+def credentials_ready(settings) -> bool:
+    """True when every provider the user selected has the key it needs."""
+    return not missing_credentials(settings)

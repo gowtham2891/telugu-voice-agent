@@ -21,7 +21,7 @@ from rich.table import Table
 from . import __version__
 from .agent import VoiceAgent
 from .config import ConfigError, get_settings
-from .health import check_settings
+from .health import check_settings, missing_credentials
 from .intents import classify, is_codemixed
 from .models import AgentResponse
 from .providers.base import (
@@ -121,7 +121,33 @@ def _build_agent(overrides: dict, progress) -> VoiceAgent:
     for key, value in overrides.items():
         if value:
             setattr(settings, key, value)
+    # chat, say and listen all build the agent here, so one guard covers them.
+    _require_credentials(settings, "voice-agent")
     return VoiceAgent(settings=settings, progress=progress)
+
+
+def _require_credentials(settings, command: str) -> None:
+    """Stop before the run when a selected provider has no key.
+
+    Exits 1 with the variable name and where to get it, rather than letting the
+    failure surface as a ConfigError part way through the pipeline.
+    """
+    gaps = missing_credentials(settings)
+    if not gaps:
+        return
+
+    console.print("[red]Missing credentials for this configuration:[/red]")
+    for item in gaps:
+        where = f" [dim]({item.get_it_at})[/dim]" if item.get_it_at else ""
+        console.print(
+            f"  {SYMBOLS['cross']} [bold]{item.env_var}[/bold] "
+            f"- needed for {item.needed_for}{where}"
+        )
+    console.print(
+        f"\nSet it in your .env file, then re-run [bold]{command} check[/bold] "
+        f"to verify. Or switch the provider back to 'mock' to run offline."
+    )
+    raise SystemExit(1)
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
