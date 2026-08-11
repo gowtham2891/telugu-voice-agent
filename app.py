@@ -9,8 +9,9 @@ import os
 
 import streamlit as st
 
-from voice_agent import VoiceAgent, __version__, get_settings
-from voice_agent.config import ConfigError
+from voice_agent import VoiceAgent, __version__
+from voice_agent.config import ConfigError, Settings
+from voice_agent.health import check_settings
 from voice_agent.intents import classify, is_codemixed
 from voice_agent.models import Conversation, Role
 from voice_agent.providers.base import (
@@ -50,9 +51,69 @@ SAMPLES = [
 ]
 
 
+#: (Settings attribute, label, help text) for keys a visitor can supply.
+KEY_FIELDS = [
+    (
+        "sarvam_api_key",
+        "Sarvam AI key",
+        "Required when STT or TTS is `sarvam`. Covers both. sarvam.ai.",
+    ),
+    (
+        "openai_api_key",
+        "OpenAI API key",
+        "Required when the language model is `openai`.",
+    ),
+    (
+        "gemini_api_key",
+        "Gemini API key",
+        "Required when the language model is `gemini`.",
+    ),
+]
+
+
+def api_key_panel(settings: Settings) -> None:
+    """Let a visitor supply their own credentials for this session only.
+
+    Entered keys are applied to this session's `Settings` object and nothing
+    else. They are deliberately never written to `os.environ`, because a
+    deployed Streamlit app serves every visitor from one process -- a key put
+    into the environment would leak into other people's sessions.
+    """
+    with st.expander("🔑 Use your own API keys", expanded=False):
+        st.caption(
+            "Keys stay in this browser session only. They are never written to "
+            "disk, never logged, and never shared with other visitors. "
+            "Close the tab and they're gone."
+        )
+
+        for attr, label, help_text in KEY_FIELDS:
+            entered = st.text_input(
+                label,
+                type="password",
+                key=f"user_key_{attr}",
+                help=help_text,
+                placeholder="paste your key here",
+            )
+            if entered and entered.strip():
+                setattr(settings, attr, entered.strip())
+
+        if st.button("Test connections", width="stretch"):
+            with st.spinner("Checking credentials…"):
+                st.session_state["health_checks"] = check_settings(settings)
+
+        for result in st.session_state.get("health_checks", []):
+            if result.ok:
+                st.success(f"**{result.provider}** — {result.message}")
+            else:
+                st.error(f"**{result.provider}** — {result.message}")
+
+
 def build_settings():
     """Render the sidebar and return the resolved settings."""
-    settings = get_settings(refresh=True)
+    # A fresh instance per script run: Streamlit Cloud serves every visitor
+    # from one process, so a shared settings object would let one session's
+    # configuration bleed into another's.
+    settings = Settings()
 
     with st.sidebar:
         st.title("🎤 Voice Agent")
@@ -85,10 +146,13 @@ def build_settings():
         )
 
         st.divider()
+        api_key_panel(settings)
+
+        st.divider()
         if settings.is_mock:
-            st.success("Mock mode — no credentials required.")
+            st.success("Mock mode â no credentials required.")
         else:
-            st.info("Live mode — reading credentials from .env")
+            st.info("Live mode â using the keys provided.")
 
         if st.button("Clear conversation", width="stretch"):
             st.session_state.pop("conversation", None)

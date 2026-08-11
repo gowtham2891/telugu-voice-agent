@@ -5,7 +5,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**▶ Try it live — [gowtham2891-telugu-voice-agent.streamlit.app](https://gowtham2891-telugu-voice-agent.streamlit.app)** · runs in mock mode, no credentials needed.
+**▶ Try it live — [gowtham2891-telugu-voice-agent.streamlit.app](https://gowtham2891-telugu-voice-agent.streamlit.app)** · runs in mock mode, no credentials needed — or paste your own API keys in the sidebar to drive the live providers.
 
 A real-time voice agent that actually handles how people in Hyderabad speak:
 
@@ -92,6 +92,9 @@ voice-agent listen question.wav --stt sarvam --llm openai --tts sarvam
 
 # Inspect the router without running the agent
 voice-agent classify "Repu meeting ni 4 PM ki reschedule cheyyandi"
+
+# Verify your API keys actually work before starting a conversation
+voice-agent check
 ```
 
 ---
@@ -218,6 +221,37 @@ synthesized audio, and every CLI exit code.
 - [ ] Voice activity detection for hands-free conversation
 - [ ] Tool calling (real calendar and reminder backends behind the intents)
 - [ ] Hindi and Tamil codemix using the same marker-based detector
+
+---
+
+## Bring your own API keys
+
+The demo runs in mock mode, but you don't have to take its word for the live
+path. Open **Use your own API keys** in the sidebar, paste a Sarvam, OpenAI or Gemini key,
+and press **Test connections**. Each provider is probed with the smallest
+authenticated request it supports, and you get a specific verdict rather than a
+generic failure:
+
+| Verdict | What it means |
+| --- | --- |
+| Key works — 68 models available | Authenticated and ready |
+| Key rejected: API key not valid | Wrong, revoked, or mistyped key |
+| Rate limited — valid but throttled | The key is fine; the quota isn't |
+| Quota exhausted / API not enabled | Actionable: says exactly what to fix |
+
+Keys entered this way stay in your browser session. They are **never** written
+to `os.environ` — a deployed Streamlit app serves every visitor from a single
+process, so a key placed in the environment would leak into other visitors'
+sessions. That property is pinned by a test that drives the real app and fails
+the build if a key ever reaches the process environment.
+
+From the terminal:
+
+```bash
+voice-agent check
+```
+
+Exit code `0` if every configured credential works, `2` if any fails.
 
 ---
 

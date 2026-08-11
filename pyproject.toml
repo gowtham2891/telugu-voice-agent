@@ -36,7 +36,7 @@ dependencies = [
 ui = ["streamlit>=1.49"]
 openai = ["openai>=1.30"]
 gemini = ["google-genai>=0.3"]
-dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "streamlit>=1.49"]
 all = [
     "streamlit>=1.49",
     "openai>=1.30",

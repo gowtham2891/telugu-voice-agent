@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from .agent import SYSTEM_PROMPT, VoiceAgent
 from .config import ConfigError, Settings, get_settings
+from .health import CheckResult, check_settings
 from .intents import classify, is_codemixed
 from .models import (
     AgentResponse,
@@ -33,6 +34,7 @@ __version__ = "1.0.0"
 __all__ = [
     "AgentResponse",
     "AudioClip",
+    "CheckResult",
     "ConfigError",
     "Conversation",
     "Intent",
@@ -45,6 +47,7 @@ __all__ = [
     "Turn",
     "VoiceAgent",
     "classify",
+    "check_settings",
     "get_settings",
     "is_codemixed",
     "__version__",
