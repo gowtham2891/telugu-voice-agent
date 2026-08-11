@@ -11,3 +11,6 @@ streamlit>=1.49
 # Optional LLM providers -- uncomment the one you use
 # openai>=1.30
 # google-genai>=0.3
+
+# Deployment note: Streamlit Community Cloud rebuilds the environment when
+# this file changes, which also forces a clean checkout of the repo.
