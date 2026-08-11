@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telugu-voice-agent"
+version = "1.0.0"
+description = "Real-time Telugu/English codemix voice agent: Sarvam STT, LLM intent handling, and Sarvam TTS."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Ganesh Gowtham Dupati", email = "gowthamdupati28@gmail.com" }]
+keywords = ["voice-agent", "telugu", "codemix", "sarvam", "speech-to-text", "tts", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Telugu",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "pydantic>=2.5",
+    "httpx>=0.25",
+    "python-dotenv>=1.0",
+    "click>=8.1",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.49"]
+openai = ["openai>=1.30"]
+gemini = ["google-genai>=0.3"]
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+all = [
+    "streamlit>=1.49",
+    "openai>=1.30",
+    "google-genai>=0.3",
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/gowtham2891/telugu-voice-agent"
+Repository = "https://github.com/gowtham2891/telugu-voice-agent"
+Issues = "https://github.com/gowtham2891/telugu-voice-agent/issues"
+
+[project.scripts]
+voice-agent = "voice_agent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["voice_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]
